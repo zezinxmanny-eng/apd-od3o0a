@@ -1,8 +1,6 @@
 {
   "TESTE-123": {
-  "expiry": 1988629498,
-  "hwid": null
+    "expiry": 1988629498,
+    "userId": null
+  }
 }
-
-}
-
