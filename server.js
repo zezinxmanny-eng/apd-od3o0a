@@ -19,32 +19,44 @@ function saveKeys(data) {
 }
 
 app.post("/check", (req, res) => {
-  const { key, hwid } = req.body
-  if (!key) return res.json({ success: false, message: "Key ausente" })
+  const { key, userId } = req.body;
 
-  const keys = loadKeys()
-  const info = keys[key]
-
-  if (!info) return res.json({ success: false, message: "Key inválida" })
-
-  const now = Math.floor(Date.now() / 1000)
-
-  if (info.expiry < now) {
-    return res.json({ success: false, message: "Key expirada" })
+  if (!key || !userId) {
+    return res.json({ success: false, message: "Dados inválidos" });
   }
 
-if (keyData.hwid && keyData.hwid !== hwid) {
+  const keyData = keys[key];
+  if (!keyData) {
+    return res.json({ success: false, message: "Key inválida" });
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  if (now > keyData.expiry) {
+    return res.json({ success: false, message: "Key expirada" });
+  }
+
+  // já vinculada a outro usuário
+  if (keyData.userId && keyData.userId !== userId) {
+    return res.json({
+      success: false,
+      message: "Key já está vinculada a outro usuário"
+    });
+  }
+
+  // primeiro uso → salva o userId
+  if (!keyData.userId) {
+    keyData.userId = userId;
+    saveKeys(); // função que grava no JSON
+  }
+
+  const daysLeft = Math.ceil((keyData.expiry - now) / 86400);
+
   return res.json({
-    success: false,
-    message: "Key já está em uso em outro dispositivo"
+    success: true,
+    daysLeft
   });
-}
-
-
-  const daysLeft = Math.ceil((info.expiry - now) / 86400)
-
-  res.json({ success: true, daysLeft })
-})
+});
 
 app.get("/", (_, res) => {
   res.send("Key system online")
@@ -53,4 +65,3 @@ app.get("/", (_, res) => {
 app.listen(PORT, () => {
   console.log("Rodando na porta", PORT)
 })
-
