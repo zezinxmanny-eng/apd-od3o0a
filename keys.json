@@ -1,10 +1,5 @@
 {
-  "SYNEX-TEST": {
-    "hwid": "E4806886D8D7EAD4500644FB2C7909",
-    "expires": 1988629498
-  },
-  "VIP-30D-999": {
-    "hwid": null,
-    "expires": 1769817600
+  "TESTE-123": {
+    "expiry": 1988629498
   }
 }

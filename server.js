@@ -1,49 +1,54 @@
 const express = require("express")
-const bodyParser = require("body-parser")
 const fs = require("fs")
-
 const app = express()
-app.use(bodyParser.json())
 
-const KEYS_FILE = "./keys.json"
+app.use(express.json())
+
+const PORT = process.env.PORT || 3000
+const FILE = "./keys.json"
 
 function loadKeys() {
-  return JSON.parse(fs.readFileSync(KEYS_FILE))
+  if (!fs.existsSync(FILE)) {
+    fs.writeFileSync(FILE, JSON.stringify({}))
+  }
+  return JSON.parse(fs.readFileSync(FILE))
 }
 
-function saveKeys(keys) {
-  fs.writeFileSync(KEYS_FILE, JSON.stringify(keys, null, 2))
+function saveKeys(data) {
+  fs.writeFileSync(FILE, JSON.stringify(data, null, 2))
 }
 
 app.post("/check", (req, res) => {
   const { key, hwid } = req.body
-  const keys = loadKeys()
-  const data = keys[key]
+  if (!key) return res.json({ success: false, message: "Key ausente" })
 
-  if (!data)
-    return res.json({ ok: false, msg: "Key inválida" })
+  const keys = loadKeys()
+  const info = keys[key]
+
+  if (!info) return res.json({ success: false, message: "Key inválida" })
 
   const now = Math.floor(Date.now() / 1000)
 
-  if (data.expires < now)
-    return res.json({ ok: false, msg: "Key expirada" })
-
-  if (!data.hwid) {
-    data.hwid = hwid
-    saveKeys(keys)
-  } else if (data.hwid !== hwid) {
-    return res.json({ ok: false, msg: "Key já usada em outro PC" })
+  if (info.expiry < now) {
+    return res.json({ success: false, message: "Key expirada" })
   }
 
-  const daysLeft = Math.ceil((data.expires - now) / 86400)
+  if (!info.hwid) {
+    info.hwid = hwid
+    saveKeys(keys)
+  } else if (info.hwid !== hwid) {
+    return res.json({ success: false, message: "Key em outro dispositivo" })
+  }
 
-  res.json({
-    ok: true,
-    daysLeft
-  })
+  const daysLeft = Math.ceil((info.expiry - now) / 86400)
+
+  res.json({ success: true, daysLeft })
 })
 
-const PORT = process.env.PORT || 3000
+app.get("/", (_, res) => {
+  res.send("Key system online")
+})
+
 app.listen(PORT, () => {
   console.log("Rodando na porta", PORT)
 })
