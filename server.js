@@ -21,11 +21,14 @@ function saveKeys(data) {
 
 /* ===== ROTAS ===== */
 app.post("/check", (req, res) => {
-  const { key, userId } = req.body;
+  let { key, userId } = req.body;
 
-  if (!key || !userId) {
+  if (!key || userId === undefined || userId === null) {
     return res.json({ success: false, message: "Dados inválidos" });
   }
+
+  // força tudo para string
+  userId = String(userId);
 
   const keys = loadKeys();
   const keyData = keys[key];
@@ -40,15 +43,11 @@ app.post("/check", (req, res) => {
     return res.json({ success: false, message: "Key expirada" });
   }
 
-  // já vinculada a outro user
-  if (keyData.userId && keyData.userId !== userId) {
-    return res.json({
-      success: false,
-      message: "Key já está vinculada a outro usuário"
-    });
+  // aqui também garante string
+  if (keyData.userId && String(keyData.userId) !== userId) {
+    return res.json({ success: false, message: "Key já está vinculada a outro usuário" });
   }
 
-  // primeiro uso → salva o userId
   if (!keyData.userId) {
     keyData.userId = userId;
     keys[key] = keyData;
@@ -56,12 +55,9 @@ app.post("/check", (req, res) => {
   }
 
   const daysLeft = Math.ceil((keyData.expiry - now) / 86400);
-
-  return res.json({
-    success: true,
-    daysLeft
-  });
+  return res.json({ success: true, daysLeft });
 });
+
 
 app.get("/", (_, res) => {
   res.send("Key system online");
@@ -70,3 +66,4 @@ app.get("/", (_, res) => {
 app.listen(PORT, () => {
   console.log("Rodando na porta", PORT);
 });
+
