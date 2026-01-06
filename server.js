@@ -33,12 +33,13 @@ app.post("/check", (req, res) => {
     return res.json({ success: false, message: "Key expirada" })
   }
 
-  if (!info.hwid) {
-    info.hwid = hwid
-    saveKeys(keys)
-  } else if (info.hwid !== hwid) {
-    return res.json({ success: false, message: "Key em outro dispositivo" })
-  }
+if (keyData.hwid && keyData.hwid !== hwid) {
+  return res.json({
+    success: false,
+    message: "Key já está em uso em outro dispositivo"
+  });
+}
+
 
   const daysLeft = Math.ceil((info.expiry - now) / 86400)
 
@@ -52,3 +53,4 @@ app.get("/", (_, res) => {
 app.listen(PORT, () => {
   console.log("Rodando na porta", PORT)
 })
+
